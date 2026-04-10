@@ -5,7 +5,10 @@ import { Roles } from 'src/auth/decorators/roles.decorator';
 import { UserRole } from '@prisma/client';
 import { JwtAuthGuard } from 'src/auth/guards/jwt-auth.guard';
 import { RolesGuard } from 'src/auth/guards/roles.guard';
+import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
 
+@ApiTags('Peminjaman')
+@ApiBearerAuth()
 @Controller('peminjaman')
 export class PeminjamanController {
   constructor(private readonly peminjamanService: PeminjamanService) {}
@@ -15,22 +18,26 @@ export class PeminjamanController {
 
   // GET /peminjaman
   @Get()
+  @ApiOperation({ summary: 'Retrieve all loan records' })
   findAll() {
     return this.peminjamanService.findAll();
   }
 
   @Get('date/:date')
+  @ApiOperation({ summary: 'Find loan records by date' })
   findByDate(@Param('date') date: string) {
     return this.peminjamanService.findByDate(date);
   }
 
   @Get(':id')
+  @ApiOperation({ summary: 'Find a loan record by ID' })
   findById(@Param('id') id: string) {
     return this.peminjamanService.findById(+id);
   }
 
   // POST /peminjaman
   @Post()
+  @ApiOperation({ summary: 'Create a new loan record' })
   create(@Body() dto: CreatePeminjamanDto) {
     return this.peminjamanService.create(dto);
   }
