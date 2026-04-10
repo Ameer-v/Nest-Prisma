@@ -49,11 +49,13 @@ export class BookController {
   }
 
   @Patch(':id')
+  @ApiOperation({ summary: 'Update a book by ID' })
   update(@Param('id') id: string, @Body() dto: UpdateBookDto) {
     return this.booksService.update(Number(id), dto);
   }
 
   @Delete(':id')
+  @ApiOperation({ summary: 'Delete a book by ID' })
   remove(@Param('id') id: string) {
     return this.booksService.remove(Number(id));
   }

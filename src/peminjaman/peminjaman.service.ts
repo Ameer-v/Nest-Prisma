@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePeminjamanDto } from './dto/create-peminjaman.dto';
+import { BadRequestException } from '@nestjs/common';
 
 @Injectable()
 export class PeminjamanService {
@@ -51,7 +52,20 @@ export class PeminjamanService {
     });
   }
 
-  create(dto: CreatePeminjamanDto) {
+  async create(dto: CreatePeminjamanDto) {
+    // 🔥 1. cek apakah buku sedang dipinjam
+    const existing = await this.prisma.peminjaman.findFirst({
+      where: {
+        bookId: dto.bookId,
+        status: 'DIPINJAM',
+      },
+    });
+
+    if (existing) {
+      throw new BadRequestException('Buku sedang dipinjam');
+    }
+
+    // 🔥 2. hitung due date
     const due = dto.dueDate
       ? new Date(dto.dueDate)
       : (() => {
@@ -60,11 +74,13 @@ export class PeminjamanService {
           return d;
         })();
 
+    // 🔥 3. create peminjaman
     return this.prisma.peminjaman.create({
       data: {
         studentId: dto.studentId,
         bookId: dto.bookId,
         dueDate: due,
+        status: 'DIPINJAM', // penting!
       },
     });
   }

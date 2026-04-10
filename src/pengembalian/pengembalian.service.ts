@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  BadRequestException,
+} from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreatePengembalianDto } from './dto/create-pengembalian.dto';
 
@@ -12,30 +16,38 @@ export class PengembalianService {
         where: { id: dto.peminjamanId },
       });
 
+      // ❌ kalau tidak ada
       if (!peminjaman) {
-        throw new Error('Peminjaman tidak ditemukan');
+        throw new NotFoundException('Peminjaman tidak ditemukan');
       }
 
+      // ❌ kalau sudah dikembalikan
       if (peminjaman.status === 'DIKEMBALIKAN') {
-        throw new Error('Buku sudah dikembalikan');
+        throw new BadRequestException('Buku sudah dikembalikan');
       }
 
+      // 🔥 return date bisa manual / auto
       const returnDate = dto.returnDate ? new Date(dto.returnDate) : new Date();
 
+      // 🔥 hitung keterlambatan
       const diffMs = returnDate.getTime() - peminjaman.dueDate.getTime();
+
       const lateDays =
         diffMs > 0 ? Math.ceil(diffMs / (1000 * 60 * 60 * 24)) : 0;
 
       const DENDA_PER_HARI = 1000;
       const denda = lateDays * DENDA_PER_HARI;
 
+      // 🔥 simpan pengembalian
       const pengembalian = await tx.pengembalian.create({
         data: {
           peminjamanId: dto.peminjamanId,
           denda,
+          returnedAt: returnDate, // 🔥 tambahkan ini
         },
       });
 
+      // 🔥 update status peminjaman
       await tx.peminjaman.update({
         where: { id: dto.peminjamanId },
         data: {
@@ -45,15 +57,14 @@ export class PengembalianService {
       });
 
       return {
-        ...pengembalian,
-        returnDate,
+        message: 'Buku berhasil dikembalikan',
+        data: pengembalian,
         lateDays,
         denda,
       };
     });
-  } // ✅ PENUTUP METHOD create()
+  }
 
-  // ✅ METHOD INI SEKARANG DI LUAR create()
   async findAll() {
     return this.prisma.pengembalian.findMany({
       include: {
