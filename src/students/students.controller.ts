@@ -16,7 +16,10 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UserRole } from '@prisma/client';
 import { Req } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 
+@ApiTags('Students')
+@ApiBearerAuth()
 @Controller('students')
 export class StudentsController {
   constructor(private readonly studentsService: StudentsService) {}
